@@ -24,9 +24,9 @@ private:
     QWebEnginePage* webEnginePagePtr_ {nullptr};
     QWebEngineView* webEngineViewPtr_ {nullptr};
 
-    std::unique_ptr<Client> clientPtr_ {nullptr};
-    std::unique_ptr<QWebSocketServer> webSocketServerPtr_ {nullptr};
-    std::unique_ptr<WebSocketClientWrapper> webSocketClientWrapperPtr_ {nullptr};
+    std::shared_ptr<Client> clientPtr_ {nullptr};
+    std::shared_ptr<QWebSocketServer> webSocketServerPtr_ {nullptr};
+    std::shared_ptr<WebSocketClientWrapper> webSocketClientWrapperPtr_ {nullptr};
 public:
     explicit MainWindow(std::shared_ptr<QSettings> appSettingsPtr,QWidget *parent = nullptr);
     virtual ~MainWindow();

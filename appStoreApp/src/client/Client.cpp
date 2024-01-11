@@ -59,10 +59,11 @@ void appstoreapp::Client::startAppUrl(QString packageName)
 
 void appstoreapp::Client::timeoutSlot()
 {
+    const auto CONNECT_TIMEOUT {500};
     const auto appStoreServiceAddress {appSettingsPtr_->value("appStoreServiceAddress").toString()};
     const auto appStoreServicePort {appSettingsPtr_->value("appStoreServicePort").toInt()};
     tcpSocketPtr_->connectToHost(appStoreServiceAddress,appStoreServicePort);
-    const auto connected {tcpSocketPtr_->waitForConnected(500)};
+    const auto connected {tcpSocketPtr_->waitForConnected(CONNECT_TIMEOUT)};
     if(connected){
         connectTimerPtr_->stop();
         qDebug("Connected to: %s:%d",qPrintable(appStoreServiceAddress),appStoreServicePort);
@@ -97,11 +98,12 @@ void appstoreapp::Client::finishedSlot()
         connectTimerPtr_->stop();
     }
     if(tcpSocketPtr_){
+        const auto DISCONNECT_TIMEOUT {500};
         const auto socketState {tcpSocketPtr_->state()};
         switch(socketState){
         case QAbstractSocket::ConnectedState:
             tcpSocketPtr_->disconnectFromHost();
-            tcpSocketPtr_->waitForDisconnected(500);
+            tcpSocketPtr_->waitForDisconnected(DISCONNECT_TIMEOUT);
             break;
         default:
             return;

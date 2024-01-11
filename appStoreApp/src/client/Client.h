@@ -16,9 +16,9 @@ class Client : public QThread
     Q_OBJECT
 private:
     const int interval_ {1000 * 2};
-    std::unique_ptr<QTimer> connectTimerPtr_   {nullptr};
+    std::shared_ptr<QTimer> connectTimerPtr_   {nullptr};
     std::shared_ptr<QSettings> appSettingsPtr_ {nullptr};
-    std::unique_ptr<QTcpSocket> tcpSocketPtr_  {nullptr};
+    std::shared_ptr<QTcpSocket> tcpSocketPtr_  {nullptr};
 protected:
     virtual void run()override;
 public:
