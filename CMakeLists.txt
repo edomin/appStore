@@ -1,0 +1,23 @@
+cmake_minimum_required(VERSION 3.14)
+set(PROJECT_NAME appStore)
+project(${PROJECT_NAME} LANGUAGES CXX)
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+#spdlog
+set(SPDLOG_MASTER_PROJECT OFF)
+set(SPDLOG_INSTALL OFF)
+set(SPDLOG_BUILD_SHARED OFF)
+set(SPDLOG_WCHAR_FILENAMES OFF)
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/appStoreApp)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/appStoreService)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/3rdparty/spdlog-1.9.2)
+
