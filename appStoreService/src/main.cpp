@@ -3,9 +3,11 @@
 #include <QtGlobal>
 #include <QString>
 #include <QDir>
+#include <map>
 #include <memory>
 #include <cassert>
 
+#include "service/Service.h"
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include <spdlog/sinks/rotating_file_sink.h>
@@ -24,11 +26,13 @@ int main(int argc, char *argv[])
     QCoreApplication app{argc,argv};
     initLogger();
     initSettings();
+    qInstallMessageHandler(msgHandler);
 
-    assert(loggerPtr_);
+    //assert(loggerPtr_);
     //assert(appSettingsPtr_);
 
-    qInstallMessageHandler(msgHandler);;
+    appstoreservice::Service service {appSettingsPtr_};
+    service.start();
     return app.exec();
 }
 
@@ -62,6 +66,20 @@ void initLogger()
 
 void initSettings()
 {
+    const QString appDir {QCoreApplication::applicationDirPath()};
+    const QString etcAppDir {QStringLiteral("%1/../.etc/appstoreapp").arg(appDir)};
+    const QString appSettingsFilename {"appstoreapp.cfg"};
+    appSettingsPtr_.reset(new QSettings(QStringLiteral("%1/%2").arg(etcAppDir,appSettingsFilename),QSettings::IniFormat));
+    const std::map<QString,QVariant> defaultMap {
+        {"serviceAddress","127.0.0.1"},
+        {"servicePort",56789}
+    };
+    std::for_each(defaultMap.begin(),defaultMap.end(),
+                  [&](const std::pair<const QString,QVariant>& pair){
+        if(!appSettingsPtr_->contains(pair.first) | appSettingsPtr_->value(pair.first).isNull()){
+            appSettingsPtr_->setValue(pair.first,pair.second);
+        }
+    });
 }
 
 void msgHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)

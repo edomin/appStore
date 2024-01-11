@@ -33,11 +33,9 @@ int main(int argc, char *argv[])
     //assert(loggerPtr_);
     //assert(appSettingsPtr_);
 
-
     appstoreapp::MainWindow mainWindow {appSettingsPtr_};
     mainWindow.resize(800,600);
     mainWindow.show();
-
     return app.exec();
 }
 

@@ -31,3 +31,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt5::Network
     spdlog
 )
+
+install(TARGETS ${PROJECT_NAME}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+

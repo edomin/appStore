@@ -4,8 +4,27 @@
 #include <QtGlobal>
 #include <QSettings>
 #include <QTcpSocket>
-#include <QMetaObject>
-#include <QAbstractEventDispatcher>
+#include <QByteArray>
+#include <QJsonObject>
+#include <QHostAddress>
+#include <QJsonDocument>
+
+void appstoreapp::Client::sendToService(const QJsonObject &requestObject)
+{
+    const auto socketState {tcpSocketPtr_->state()};
+    if(socketState!=QAbstractSocket::ConnectedState){
+        qWarning("Tcp socket not connected to service!");
+        return;
+    }
+    const auto WRITE_TIMEOUT {1000};
+    const auto data {QJsonDocument{requestObject}.toJson()};
+    tcpSocketPtr_->write(data);
+    const auto written {tcpSocketPtr_->waitForBytesWritten(WRITE_TIMEOUT)};
+    if(!written){
+        qWarning("Write to TcpSocket failed by timeout!");
+    }
+    qInfo("Requext sended success, content: %s",qPrintable(QJsonDocument(requestObject).toJson()));
+}
 
 void appstoreapp::Client::run()
 {
@@ -14,6 +33,8 @@ void appstoreapp::Client::run()
     tcpSocketPtr_.reset(new QTcpSocket);
     QObject::connect(connectTimerPtr_.get(),&QTimer::timeout,
                      this,&Client::timeoutSlot,Qt::DirectConnection);
+    QObject::connect(tcpSocketPtr_.get(),&QTcpSocket::connected,
+                     this,&Client::connectedSlot,Qt::DirectConnection);
     connectTimerPtr_->start();
     QObject::connect(this,&QThread::finished,this,
                      &Client::finishedSlot,Qt::DirectConnection);
@@ -34,62 +55,97 @@ appstoreapp::Client::~Client()
 
 void appstoreapp::Client::getInstalledApps()
 {
-    qInfo("Get installed apps list");
+    qDebug("Get installed apps list");
+    const QJsonObject requestObject {
+        {"command","getInstalledApps"}
+    };
+    sendToService(requestObject);
 }
 
 void appstoreapp::Client::aptInstallApp(QString packageName)
 {
-    qInfo("Install app package: %s",qPrintable(packageName));
+    qDebug("Install app package: %s",qPrintable(packageName));
+    const QJsonObject requestObject {
+        {"command","aptInstallApp"},
+        {"param",packageName}
+    };
+    sendToService(requestObject);
 }
 
 void appstoreapp::Client::aptRemoveApp(QString packageName)
 {
-    qInfo("Remove app package: %s",qPrintable(packageName));
+    qDebug("Remove app package: %s",qPrintable(packageName));
+    const QJsonObject requestObject {
+        {"command","aptRemoveApp"},
+        {"param",packageName}
+    };
+    sendToService(requestObject);
 }
 
 void appstoreapp::Client::startApp(QString packageName)
 {
-    qInfo("Start app package: %s",qPrintable(packageName));
+    qDebug("Start app package: %s",qPrintable(packageName));
+    const QJsonObject requestObject {
+        {"command","startApp"},
+        {"param",packageName}
+    };
+    sendToService(requestObject);
 }
 
 void appstoreapp::Client::startAppUrl(QString packageName)
 {
-    qInfo("Start url app package: %s",qPrintable(packageName));
+    qDebug("Start url app package: %s",qPrintable(packageName));
+    const QJsonObject requestObject {
+        {"command","startAppUrl"},
+        {"param",packageName}
+    };
+    sendToService(requestObject);
 }
 
 void appstoreapp::Client::timeoutSlot()
 {
-    const auto CONNECT_TIMEOUT {500};
+    const auto CONNECT_TIMEOUT {100};
     const auto appStoreServiceAddress {appSettingsPtr_->value("appStoreServiceAddress").toString()};
     const auto appStoreServicePort {appSettingsPtr_->value("appStoreServicePort").toInt()};
     tcpSocketPtr_->connectToHost(appStoreServiceAddress,appStoreServicePort);
     const auto connected {tcpSocketPtr_->waitForConnected(CONNECT_TIMEOUT)};
-    if(connected){
-        connectTimerPtr_->stop();
-        qDebug("Connected to: %s:%d",qPrintable(appStoreServiceAddress),appStoreServicePort);
-        QObject::connect(tcpSocketPtr_.get(),&QTcpSocket::disconnected,
-                         this,&Client::disconnectedSlot,Qt::DirectConnection);
-        QObject::connect(tcpSocketPtr_.get(),&QTcpSocket::readyRead,
-                         this,&Client::readyReadSlot,Qt::DirectConnection);
+    if(!connected){
+        qWarning("Fail to connect to: %s:%d, error: %s",
+                 qPrintable(appStoreServiceAddress),appStoreServicePort,qPrintable(tcpSocketPtr_->errorString()));
         return;
     }
-    qWarning("Fail to connect to: %s:%d, error: %s",
-             qPrintable(appStoreServiceAddress),appStoreServicePort,qPrintable(tcpSocketPtr_->errorString()));
+    connectTimerPtr_->stop();
 }
 
 void appstoreapp::Client::connectedSlot()
 {
-
+    qDebug("Connected to: %s:%d",qPrintable(tcpSocketPtr_->peerAddress().toString()),tcpSocketPtr_->peerPort());
+    QObject::connect(tcpSocketPtr_.get(),&QTcpSocket::disconnected,
+                     this,&Client::disconnectedSlot,Qt::DirectConnection);
+    QObject::connect(tcpSocketPtr_.get(),&QTcpSocket::readyRead,
+                     this,&Client::readyReadSlot,Qt::DirectConnection);
+    const QJsonObject requestObject{
+        {"command","getInstalledApps"}
+    };
+    sendToService(requestObject);
 }
 
 void appstoreapp::Client::disconnectedSlot()
 {
-
+    if(!connectTimerPtr_){
+        connectTimerPtr_.reset(new QTimer);
+        connectTimerPtr_->setInterval(interval_);
+    }
+    connectTimerPtr_->start();
 }
 
 void appstoreapp::Client::readyReadSlot()
 {
-
+    const auto data {tcpSocketPtr_->readAll()};
+    const auto responseObject {QJsonDocument::fromJson(data).object()};
+    if(!responseObject.isEmpty()){
+        const auto key {responseObject.value("command").toString()};
+    }
 }
 
 void appstoreapp::Client::finishedSlot()

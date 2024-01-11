@@ -1,13 +1,13 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-#include <QObject>
 #include <QThread>
 #include <memory>
 
 class QTimer;
 class QSettings;
 class QTcpSocket;
+class QJsonObject;
 
 namespace appstoreapp
 {
@@ -15,10 +15,20 @@ class Client : public QThread
 {
     Q_OBJECT
 private:
+    enum class Commands
+    {
+        GET_INSTALLED,
+        INSTALL_APP,
+        REMOVE_APP,
+        START_APP,
+        START_APP_URL,
+        UNKNOWN
+    };
     const int interval_ {1000 * 2};
     std::shared_ptr<QTimer> connectTimerPtr_   {nullptr};
     std::shared_ptr<QSettings> appSettingsPtr_ {nullptr};
     std::shared_ptr<QTcpSocket> tcpSocketPtr_  {nullptr};
+    void sendToService(const QJsonObject& requestObject);
 protected:
     virtual void run()override;
 public:
