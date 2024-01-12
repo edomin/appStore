@@ -1,4 +1,7 @@
 #include <QCoreApplication>
+#include <QWebSocketServer>
+#include <QWebChannel>
+#include <QHostAddress>
 #include <QSettings>
 #include <QtGlobal>
 #include <QString>
@@ -8,6 +11,10 @@
 #include <cassert>
 
 #include "service/Service.h"
+#include "handlers/WebHandler.h"
+#include "handlers/TcpHandler.h"
+#include "shared/websockettransport.h"
+#include "shared/websocketclientwrapper.h"
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include <spdlog/sinks/rotating_file_sink.h>
@@ -28,11 +35,34 @@ int main(int argc, char *argv[])
     initSettings();
     qInstallMessageHandler(msgHandler);
 
-    //assert(loggerPtr_);
-    //assert(appSettingsPtr_);
+    assert(loggerPtr_);
+    assert(appSettingsPtr_);
 
-    appstoreservice::Service service {appSettingsPtr_};
-    service.start();
+    const auto webServerPort {3000};
+    const auto webServerAddress {QHostAddress::LocalHost};
+
+    QWebSocketServer webServer {"webServer",QWebSocketServer::NonSecureMode};
+    if(!webServer.listen(webServerAddress,webServerPort)){
+        qFatal("Fail open webserver on: %s:%d, error: %s",
+               qPrintable(QHostAddress(webServerAddress).toString()),webServerPort);
+        app.quit();
+    }
+    qInfo("WebServer started on: %s:%d",
+          qPrintable(QHostAddress(webServerAddress).toString()),webServerPort);
+
+    QWebChannel webChannel {};
+    WebSocketClientWrapper clientWrapper(&webServer);
+    QObject::connect(&clientWrapper,&WebSocketClientWrapper::clientConnected,
+                     &webChannel,&QWebChannel::connectTo);
+
+    appstoreservice::WebHandler webHandler {appSettingsPtr_};
+    appstoreservice::TcpHandler tcpHandler {appSettingsPtr_};
+
+    webChannel.registerObject("clientapp",&webHandler);
+    tcpHandler.start();
+
+    //appstoreservice::Service service {appSettingsPtr_};
+    //service.start();
     return app.exec();
 }
 
@@ -52,12 +82,7 @@ void initLogger()
     const spdlog::level::level_enum logLevel {spdlog::level::debug};
     std::vector<spdlog::sink_ptr> sinks;
     sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
-#ifdef Q_OS_WIN
     sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logfilenamePath.toStdString(), logFilesize, logFilescount));
-#endif
-#ifdef Q_OS_LINUX
-    sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logfilenamePath.toStdString(), logFilesize, logFilescount));
-#endif
     loggerPtr_.reset(new spdlog::logger(logName.toStdString(), sinks.begin(),sinks.end()));
     spdlog::register_logger(loggerPtr_);
     loggerPtr_->set_level(logLevel);

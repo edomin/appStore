@@ -13,6 +13,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt5 COMPONENTS Core REQUIRED)
 find_package(Qt5 COMPONENTS Network REQUIRED)
+find_package(Qt5 COMPONENTS WebSockets REQUIRED)
+find_package(Qt5 COMPONENTS WebEngineWidgets REQUIRED)
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
@@ -29,6 +31,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME} PRIVATE 
     Qt5::Core
     Qt5::Network
+    Qt5::WebSockets
+    Qt5::WebEngineWidgets
     spdlog
 )
 

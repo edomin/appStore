@@ -55,12 +55,7 @@ void initLogger()
     const spdlog::level::level_enum logLevel {spdlog::level::debug};
     std::vector<spdlog::sink_ptr> sinks;
     sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
-#ifdef Q_OS_WIN
     sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logfilenamePath.toStdString(), logFilesize, logFilescount));
-#endif
-#ifdef Q_OS_LINUX
-    sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logfilenamePath.toStdString(), logFilesize, logFilescount));
-#endif
     loggerPtr_.reset(new spdlog::logger(logName.toStdString(), sinks.begin(),sinks.end()));
     spdlog::register_logger(loggerPtr_);
     loggerPtr_->set_level(logLevel);
