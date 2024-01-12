@@ -141,11 +141,44 @@ void appstoreapp::Client::disconnectedSlot()
 
 void appstoreapp::Client::readyReadSlot()
 {
+    const auto getCommand{[](const QString& key){
+            const std::map<QString,Client::Commands> commandsMap {
+                {"getInstalledApps",Client::Commands::GET_INSTALLED},
+                {"aptInstallApp",Client::Commands::INSTALL_APP},
+                {"aptRemoveApp",Client::Commands::REMOVE_APP},
+                {"startApp",Client::Commands::START_APP},
+                {"startAppUrl",Client::Commands::START_APP_URL},
+            };
+            const auto found {commandsMap.find(key)};
+            if(found!=commandsMap.end()){
+                return found->second;
+            }
+            return Client::Commands::UNKNOWN;
+        }
+    };
     const auto data {tcpSocketPtr_->readAll()};
     const auto responseObject {QJsonDocument::fromJson(data).object()};
     if(!responseObject.isEmpty()){
         const auto key {responseObject.value("command").toString()};
+        const auto command {getCommand(key)};
+        switch(command){
+        case Client::Commands::GET_INSTALLED:
+            break;
+        case Client::Commands::INSTALL_APP:
+            break;
+        case Client::Commands::REMOVE_APP:
+            break;
+        case Client::Commands::START_APP:
+            break;
+        case Client::Commands::START_APP_URL:
+            break;
+        case Client::Commands::UNKNOWN:
+            qWarning("Unknown command: '%s'",qPrintable(key));
+            break;
+        }
+        return;
     }
+    qWarning("Empty response object!");
 }
 
 void appstoreapp::Client::finishedSlot()

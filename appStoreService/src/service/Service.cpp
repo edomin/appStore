@@ -55,7 +55,6 @@ appstoreservice::Service::Service(std::shared_ptr<QSettings> appSettingsPtr, QOb
     : QThread(parent),
       appSettingsPtr_{appSettingsPtr}
 {
-
 }
 
 appstoreservice::Service::~Service()
@@ -107,7 +106,7 @@ void appstoreservice::Service::readyReadSlot()
     const auto requestObject {QJsonDocument::fromJson(data).object()};
     if(!requestObject.isEmpty()){
         const auto key {requestObject.value("command").toString()};
-        const auto command{getCommand(key)};
+        const auto command {getCommand(key)};
         switch(command){
         case Service::Commands::GET_INSTALLED:
             getInstalledApps();
@@ -128,5 +127,7 @@ void appstoreservice::Service::readyReadSlot()
             qWarning("Unknown command: '%s'",qPrintable(key));
             break;
         }
+        return;
     }
+    qWarning("Empty request object!");
 }
