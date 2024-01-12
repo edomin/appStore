@@ -10,7 +10,6 @@
 #include <memory>
 #include <cassert>
 
-#include "service/Service.h"
 #include "handlers/WebHandler.h"
 #include "handlers/TcpHandler.h"
 #include "shared/websockettransport.h"
@@ -38,6 +37,7 @@ int main(int argc, char *argv[])
     assert(loggerPtr_);
     assert(appSettingsPtr_);
 
+#if 0
     const auto webServerPort {3000};
     const auto webServerAddress {QHostAddress::LocalHost};
 
@@ -56,13 +56,11 @@ int main(int argc, char *argv[])
                      &webChannel,&QWebChannel::connectTo);
 
     appstoreservice::WebHandler webHandler {appSettingsPtr_};
-    appstoreservice::TcpHandler tcpHandler {appSettingsPtr_};
-
     webChannel.registerObject("clientapp",&webHandler);
-    tcpHandler.start();
+#endif
 
-    //appstoreservice::Service service {appSettingsPtr_};
-    //service.start();
+    appstoreservice::TcpHandler tcpHandler {appSettingsPtr_};
+    tcpHandler.start();
     return app.exec();
 }
 
@@ -92,12 +90,12 @@ void initLogger()
 void initSettings()
 {
     const QString appDir {QCoreApplication::applicationDirPath()};
-    const QString etcAppDir {QStringLiteral("%1/../.etc/appstoreapp").arg(appDir)};
-    const QString appSettingsFilename {"appstoreapp.cfg"};
+    const QString etcAppDir {QStringLiteral("%1/../.etc/appstoreservice").arg(appDir)};
+    const QString appSettingsFilename {"appstoreservice.cfg"};
     appSettingsPtr_.reset(new QSettings(QStringLiteral("%1/%2").arg(etcAppDir,appSettingsFilename),QSettings::IniFormat));
     const std::map<QString,QVariant> defaultMap {
-        {"serviceAddress","127.0.0.1"},
-        {"servicePort",56789}
+        {"tcpAddress","127.0.0.1"},
+        {"tcpPort",56789}
     };
     std::for_each(defaultMap.begin(),defaultMap.end(),
                   [&](const std::pair<const QString,QVariant>& pair){

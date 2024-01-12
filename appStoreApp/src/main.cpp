@@ -1,5 +1,7 @@
 #include <QApplication>
-#include <QQmlContext>
+#include <QWebSocketServer>
+#include <QHostAddress>
+#include <QWebChannel>
 #include <QSettings>
 #include <QVariant>
 #include <QtGlobal>
@@ -9,7 +11,10 @@
 #include <memory>
 #include <cassert>
 
+#include "shared/websockettransport.h"
+#include "shared/websocketclientwrapper.h"
 #include "MainWindow.h"
+#include "handlers/TcpHandler.h"
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include <spdlog/sinks/rotating_file_sink.h>
@@ -30,8 +35,33 @@ int main(int argc, char *argv[])
     initSettings();
     qInstallMessageHandler(msgHandler);
 
-    //assert(loggerPtr_);
-    //assert(appSettingsPtr_);
+    assert(loggerPtr_);
+    assert(appSettingsPtr_);
+
+#if 1
+    const auto webServerPort {3000};
+    const auto webServerAddress {QHostAddress::LocalHost};
+
+    QWebSocketServer webServer {"webServer",QWebSocketServer::NonSecureMode};
+    if(!webServer.listen(webServerAddress,webServerPort)){
+        qFatal("Fail open webserver on: %s:%d, error: %s",
+               qPrintable(QHostAddress(webServerAddress).toString()),webServerPort);
+        app.quit();
+    }
+    qInfo("WebServer started on: %s:%d",
+          qPrintable(QHostAddress(webServerAddress).toString()),webServerPort);
+
+    QWebChannel webChannel {};
+    WebSocketClientWrapper clientWrapper(&webServer);
+    QObject::connect(&clientWrapper,&WebSocketClientWrapper::clientConnected,
+                     &webChannel,&QWebChannel::connectTo);
+
+    appstoreapp::TcpHandler tcpHandler {appSettingsPtr_};
+    QObject::connect(&tcpHandler,&appstoreapp::TcpHandler::finished,
+                     &tcpHandler,&appstoreapp::TcpHandler::deleteLater);
+    webChannel.registerObject("clientapp",&tcpHandler);
+    tcpHandler.start();
+#endif
 
     appstoreapp::MainWindow mainWindow {appSettingsPtr_};
     mainWindow.resize(800,600);
@@ -70,8 +100,8 @@ void initSettings()
     appSettingsPtr_.reset(new QSettings(QStringLiteral("%1/%2").arg(etcAppDir,appSettingsFilename),QSettings::IniFormat));
     const std::map<QString,QVariant> defaultMap {
         {"appStoreUrl","https://school.mos.ru/app/"},
-        {"appStoreServiceAddress","127.0.0.1"},
-        {"appStoreServicePort",56789}
+        {"tcpAddress","127.0.0.1"},
+        {"tcpPort",56789}
     };
     std::for_each(defaultMap.begin(),defaultMap.end(),
                   [&](const std::pair<const QString,QVariant>& pair){

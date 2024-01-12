@@ -11,7 +11,7 @@ class QJsonObject;
 
 namespace appstoreapp
 {
-class Client : public QThread
+class TcpHandler : public QThread
 {
     Q_OBJECT
 private:
@@ -32,8 +32,8 @@ private:
 protected:
     virtual void run()override;
 public:
-    explicit Client(std::shared_ptr<QSettings> appSettingsPtr,QObject *parent = nullptr);
-    virtual ~Client();
+    explicit TcpHandler(std::shared_ptr<QSettings> appSettingsPtr,QObject *parent = nullptr);
+    virtual ~TcpHandler();
 
 public slots:
     void getInstalledApps();
