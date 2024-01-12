@@ -8,6 +8,8 @@
 #include <QJsonObject>
 #include <QHostAddress>
 #include <QJsonDocument>
+#include <QMetaObject>
+#include <QAbstractEventDispatcher>
 
 void appstoreapp::Client::sendToService(const QJsonObject &requestObject)
 {
@@ -18,11 +20,14 @@ void appstoreapp::Client::sendToService(const QJsonObject &requestObject)
     }
     const auto WRITE_TIMEOUT {1000};
     const auto data {QJsonDocument{requestObject}.toJson()};
-    tcpSocketPtr_->write(data);
-    const auto written {tcpSocketPtr_->waitForBytesWritten(WRITE_TIMEOUT)};
-    if(!written){
-        qWarning("Write to TcpSocket failed by timeout!");
-    }
+    QMetaObject::invokeMethod(QAbstractEventDispatcher::instance(tcpSocketPtr_->thread()),
+        [=](){
+            tcpSocketPtr_->write(data);
+            const auto written {tcpSocketPtr_->waitForBytesWritten(WRITE_TIMEOUT)};
+            if(!written){
+                qWarning("Write to TcpSocket failed by timeout!");
+            }
+    });
     qInfo("Requext sended success, content: %s",qPrintable(QJsonDocument(requestObject).toJson()));
 }
 
@@ -55,7 +60,6 @@ appstoreapp::Client::~Client()
 
 void appstoreapp::Client::getInstalledApps()
 {
-    qDebug("Get installed apps list");
     const QJsonObject requestObject {
         {"command","getInstalledApps"}
     };
@@ -64,7 +68,6 @@ void appstoreapp::Client::getInstalledApps()
 
 void appstoreapp::Client::aptInstallApp(QString packageName)
 {
-    qDebug("Install app package: %s",qPrintable(packageName));
     const QJsonObject requestObject {
         {"command","aptInstallApp"},
         {"param",packageName}
@@ -74,7 +77,6 @@ void appstoreapp::Client::aptInstallApp(QString packageName)
 
 void appstoreapp::Client::aptRemoveApp(QString packageName)
 {
-    qDebug("Remove app package: %s",qPrintable(packageName));
     const QJsonObject requestObject {
         {"command","aptRemoveApp"},
         {"param",packageName}
@@ -84,7 +86,6 @@ void appstoreapp::Client::aptRemoveApp(QString packageName)
 
 void appstoreapp::Client::startApp(QString packageName)
 {
-    qDebug("Start app package: %s",qPrintable(packageName));
     const QJsonObject requestObject {
         {"command","startApp"},
         {"param",packageName}
@@ -94,7 +95,6 @@ void appstoreapp::Client::startApp(QString packageName)
 
 void appstoreapp::Client::startAppUrl(QString packageName)
 {
-    qDebug("Start url app package: %s",qPrintable(packageName));
     const QJsonObject requestObject {
         {"command","startAppUrl"},
         {"param",packageName}
