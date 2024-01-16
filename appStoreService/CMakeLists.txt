@@ -13,6 +13,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt5 COMPONENTS Core REQUIRED)
 find_package(Qt5 COMPONENTS Network REQUIRED)
+find_package(Qt5 COMPONENTS XmlPatterns REQUIRED)
 find_package(Qt5 COMPONENTS WebSockets REQUIRED)
 find_package(Qt5 COMPONENTS WebEngineWidgets REQUIRED)
 
@@ -31,6 +32,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME} PRIVATE 
     Qt5::Core
     Qt5::Network
+    Qt5::XmlPatterns
     Qt5::WebSockets
     Qt5::WebEngineWidgets
     spdlog

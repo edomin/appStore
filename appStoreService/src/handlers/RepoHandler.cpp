@@ -1,5 +1,6 @@
 #include "RepoHandler.h"
 
+#include <QUrl>
 #include <QDir>
 #include <QFile>
 #include <QTimer>
@@ -8,6 +9,11 @@
 #include <QTextStream>
 #include <QFileInfo>
 #include <QJsonObject>
+#include <QNetworkReply>
+#include <QNetworkRequest>
+#include <QNetworkAccessManager>
+#include <QEventLoop>
+#include <QXmlQuery>
 #include <QDebug>
 #include <algorithm>
 #include <vector>
@@ -86,6 +92,23 @@ std::map<QString, QString> appstoreservice::RepoHandler::getRepoCacheMap() const
     }
 
     std::for_each(qAsConst(repoUrlList).begin(),qAsConst(repoUrlList).end(),[&](const QString& repoUrl){
+        auto url {QUrl(repoUrl)};
+        QNetworkAccessManager accessManegr {};
+        QNetworkRequest request(url);
+        QEventLoop eventLoop {};
+        std::unique_ptr<QNetworkReply> replyPtr {accessManegr.get(request)};
+        QObject::connect(replyPtr.get(),&QNetworkReply::finished,[&](){
+            eventLoop.quit();
+        });
+        eventLoop.exec();
+        if(replyPtr->error()==QNetworkReply::NoError){
+            const auto data {replyPtr->readAll()};
+            qDebug()<<data;
+            int n=0;
+        }
+        else{
+            qDebug()<<replyPtr->errorString();
+        }
         qDebug()<<repoUrl;
     });
 
