@@ -66,7 +66,7 @@ std::map<QString, QString> appstoreservice::RepoHandler::getRepoCacheMap() const
     });
 
     const auto repoEnd {std::partition(repoObjects.begin(),repoObjects.end(),[](const QJsonObject& jsonObject){
-            return jsonObject.value("enabled").toString()=="1";
+            return jsonObject.value("enabled").toString()=="1" && jsonObject.value("name").toString().contains("x86_64");
         })};
     auto repoBegin {repoObjects.begin()};
     const auto versionId {osReleaseMap_.at("VERSION_ID")};
