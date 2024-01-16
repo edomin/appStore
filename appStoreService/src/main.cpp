@@ -12,6 +12,7 @@
 
 #include "handlers/WebHandler.h"
 #include "handlers/TcpHandler.h"
+#include "handlers/RepoHandler.h"
 #include "shared/websockettransport.h"
 #include "shared/websocketclientwrapper.h"
 #include "spdlog/spdlog.h"
@@ -60,7 +61,9 @@ int main(int argc, char *argv[])
 #endif
 
     appstoreservice::TcpHandler tcpHandler {appSettingsPtr_};
+    appstoreservice::RepoHandler repoHandler {appSettingsPtr_};
     tcpHandler.start();
+    repoHandler.start();
     return app.exec();
 }
 
