@@ -17,22 +17,22 @@ void appstoreservice::TcpHandler::getInstalledApps()
 
 void appstoreservice::TcpHandler::aptInstallApp(const QJsonObject &requestObject)
 {
-    qDebug("Executing 'aptInstallApp'");
+    qDebug("Executing 'aptInstallApp'; Request: %s",qPrintable(QJsonDocument(requestObject).toJson()));
 }
 
 void appstoreservice::TcpHandler::aptRemoveApp(const QJsonObject &requestObject)
 {
-    qDebug("Executing 'aptRemoveApp'");
+    qDebug("Executing 'aptRemoveApp'; Request: %s",qPrintable(QJsonDocument(requestObject).toJson()));
 }
 
 void appstoreservice::TcpHandler::startApp(const QJsonObject &requestObject)
 {
-    qDebug("Executing 'startApp'");
+    qDebug("Executing 'startApp'; Request: %s",qPrintable(QJsonDocument(requestObject).toJson()));
 }
 
 void appstoreservice::TcpHandler::startAppUrl(const QJsonObject& requestObject)
 {
-    qDebug("Executing 'startAppUrl'");
+    qDebug("Executing 'startAppUrl'; Request: %s",qPrintable(QJsonDocument(requestObject).toJson()));
 }
 
 void appstoreservice::TcpHandler::run()
