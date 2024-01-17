@@ -32,7 +32,9 @@ void appstoreservice::RepoHandler::updateRepoCache(QString& lastError)
     }
     repoCacheMap_=getRepoCacheMap(found->second);
     lastCacheUpdatedDt_=QDateTime::currentDateTime();
-    qInfo("Repository cache updated");
+    if(repoUpdatedCallback_){
+        repoUpdatedCallback_(std::move(repoCacheMap_));
+    }
 }
 
 std::map<QString, QString> appstoreservice::RepoHandler::getOsReleaseMap(QString &lastError) const

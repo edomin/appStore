@@ -3,6 +3,7 @@
 
 #include <QThread>
 #include <memory>
+#include <map>
 
 class QSettings;
 class QTcpServer;
@@ -26,6 +27,7 @@ private:
     std::shared_ptr<QSettings> appSettingsPtr_ {nullptr};
     std::shared_ptr<QTcpServer> tcpServerPtr_  {nullptr};
     std::shared_ptr<QTcpSocket> tcpSocketPtr_  {nullptr};
+    std::map<QString,QString> repoCacheMap_ {};
 
     void getInstalledApps();
     void aptInstallApp(const QJsonObject& requestObject);
@@ -37,6 +39,10 @@ protected:
 public:
     explicit TcpHandler(std::shared_ptr<QSettings> appSettingsPtr,QObject *parent = nullptr);
     virtual ~TcpHandler();
+    inline void repoUpdatedCallback(std::map<QString,QString>&& repoCacheMap){
+        repoCacheMap_=std::move(repoCacheMap);
+        qInfo("Repository cache updated");
+    }
 private slots:
     void newConnectionSlot();
     void disconnectSlot();

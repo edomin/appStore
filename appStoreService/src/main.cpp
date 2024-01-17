@@ -62,6 +62,9 @@ int main(int argc, char *argv[])
 
     appstoreservice::TcpHandler tcpHandler {appSettingsPtr_};
     appstoreservice::RepoHandler repoHandler {appSettingsPtr_};
+    repoHandler.setRepoUpdatedCallback([&](std::map<QString,QString>&& repoCacheMap){
+        tcpHandler.repoUpdatedCallback(std::move(repoCacheMap));
+    });
     tcpHandler.start();
     repoHandler.start();
     return app.exec();

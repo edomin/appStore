@@ -2,6 +2,7 @@
 #define REPOHANDLER_H
 #include <QDateTime>
 #include <QThread>
+#include <functional>
 #include <memory>
 #include <map>
 
@@ -20,6 +21,7 @@ private:
     std::shared_ptr<QTimer> timerPtr_ {nullptr};
     std::shared_ptr<QSettings> appSettingsPtr_ {nullptr};
     std::map<QString,QString> repoCacheMap_ {};
+    std::function<void(std::map<QString,QString>&& repoCacheMap)> repoUpdatedCallback_ {nullptr};
 
     void updateRepoCache(QString& lastError);
     std::map<QString,QString> getOsReleaseMap(QString& lastError)const;
@@ -29,6 +31,9 @@ protected:
 public:
     explicit RepoHandler(std::shared_ptr<QSettings> appSettingsPtr,QObject* parent=nullptr);
     virtual ~RepoHandler();
+    inline void setRepoUpdatedCallback(std::function<void(std::map<QString,QString>&& repoCacheMap)> repoUpdatedCallback){
+        repoUpdatedCallback_=repoUpdatedCallback;
+    }
 private slots:
     void timeoutSlot();
 };
