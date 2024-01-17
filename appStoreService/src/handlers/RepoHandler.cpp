@@ -104,7 +104,6 @@ std::map<QString, QString> appstoreservice::RepoHandler::getRepoCacheMap() const
         if(replyPtr->error()==QNetworkReply::NoError){
             const auto data {replyPtr->readAll()};
             qDebug()<<data;
-            int n=0;
         }
         else{
             qDebug()<<replyPtr->errorString();
