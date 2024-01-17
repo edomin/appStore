@@ -42,7 +42,7 @@ std::map<QString, QString> appstoreservice::RepoHandler::getOsReleaseMap(QString
     return osReleaseMap;
 }
 
-std::map<QString, QString> appstoreservice::RepoHandler::getRepoCacheMap() const
+std::map<QString, QString> appstoreservice::RepoHandler::getRepoCacheMap(const QString &releaseVer) const
 {
     const auto repoFilesPath {"/etc/yum.repos.d"};
     const auto repoFilesList {QDir(repoFilesPath).entryInfoList({"*.repo"},QDir::Files)};
@@ -78,8 +78,7 @@ std::map<QString, QString> appstoreservice::RepoHandler::getRepoCacheMap() const
             return jsonObject.value("enabled").toString()=="1" && jsonObject.value("name").toString().contains("x86_64");
         })};
     auto repoBegin {repoObjects.begin()};
-    const auto versionId {osReleaseMap_.at("VERSION_ID")};
-    const auto releaseVer {"$releasever"};
+    const auto releaseVerTag {"$releasever"};
     std::vector<QString> repoUrlList {};
     while(repoBegin!=repoEnd){
         const auto baseUrl {repoBegin->value("baseurl").toString()};
@@ -87,7 +86,7 @@ std::map<QString, QString> appstoreservice::RepoHandler::getRepoCacheMap() const
         if(!baseUrlList.isEmpty()){
             std::transform(baseUrlList.begin(),baseUrlList.end(),std::back_inserter(repoUrlList),[&](const QString& url){
                 auto repoUrl {url};
-                repoUrl.replace(releaseVer,versionId);
+                repoUrl.replace(releaseVerTag,releaseVer);
                 return repoUrl;
             });
         }
@@ -100,7 +99,7 @@ std::map<QString, QString> appstoreservice::RepoHandler::getRepoCacheMap() const
         QNetworkRequest request(url);
         QEventLoop eventLoop {};
         std::unique_ptr<QNetworkReply> replyPtr {accessManegr.get(request)};
-        QObject::connect(replyPtr.get(),&QNetworkReply::finished,[&](){
+        QObject::connect(replyPtr.get(),&QNetworkReply::finished,[&eventLoop](){
             eventLoop.quit();
         });
         eventLoop.exec();
@@ -111,7 +110,7 @@ std::map<QString, QString> appstoreservice::RepoHandler::getRepoCacheMap() const
                 const auto line {stream.readLine()};
                 QDomDocument doc{};
                 doc.setContent(line);
-                QDomElement element {doc.documentElement()};
+                const auto element {doc.documentElement()};
                 if(!element.isNull() && element.tagName()=="a"){
                     const auto packageName {element.text()};
                     if(packageName.endsWith(".rpm")){
@@ -127,18 +126,15 @@ std::map<QString, QString> appstoreservice::RepoHandler::getRepoCacheMap() const
             qWarning(qPrintable(replyPtr->errorString()));
         }
     });
-    std::for_each(repoCacheMap.begin(),repoCacheMap.end(),[](const std::pair<const QString,QString>& pair){
-        qDebug(qPrintable(pair.first));
-        qDebug(qPrintable(pair.second));
-    });
+    qDebug("Packages cache created");
     return repoCacheMap;
 }
 
 void appstoreservice::RepoHandler::run()
 {
     QString lastError {};
-    osReleaseMap_=getOsReleaseMap(lastError);
-    repoCacheMap_=getRepoCacheMap();
+    const auto osReleaseMap {getOsReleaseMap(lastError)};
+    repoCacheMap_=getRepoCacheMap(osReleaseMap.at("VERSION_ID"));
     if(!lastError.isEmpty()){
         QThread::quit();
         return;
