@@ -23,8 +23,14 @@
 
 void appstoreservice::RepoHandler::updateRepoCache(QString& lastError)
 {
+    const auto releaseVerTag {QString{"VERSION_ID"}};
     const auto osReleaseMap {getOsReleaseMap(lastError)};
-    repoCacheMap_=getRepoCacheMap(osReleaseMap.at("VERSION_ID"));
+    const auto found {osReleaseMap.find(releaseVerTag)};
+    if(found==osReleaseMap.end()){
+        qWarning("Tag '%s' not found in osReleaseMap!",qPrintable(releaseVerTag));
+        return;
+    }
+    repoCacheMap_=getRepoCacheMap(found->second);
     lastCacheUpdatedDt_=QDateTime::currentDateTime();
     qInfo("Repository cache updated");
 }
