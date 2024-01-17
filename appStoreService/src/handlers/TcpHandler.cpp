@@ -44,10 +44,10 @@ void appstoreservice::TcpHandler::run()
     tcpServerPtr_.reset(new QTcpServer);
     const auto listen {tcpServerPtr_->listen(tcpAddress,tcpPort)};
     if(!listen){
-        qWarning("Fail to listen on: :%s:%d",qPrintable(tcpServerPtr_->serverAddress().toString()),tcpPort);
+        qWarning("Fail to open TcpServer on: :%s:%d",qPrintable(tcpServerPtr_->serverAddress().toString()),tcpPort);
         return;
     }
-    qInfo("Start listening on :%s:%d",qPrintable(tcpServerPtr_->serverAddress().toString()),tcpPort);
+    qInfo("TcpServer listening on :%s:%d",qPrintable(tcpServerPtr_->serverAddress().toString()),tcpPort);
     QObject::connect(tcpServerPtr_.get(),&QTcpServer::newConnection,
                      this,&TcpHandler::newConnectionSlot,Qt::DirectConnection);
     QThread::exec();

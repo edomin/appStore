@@ -5,6 +5,7 @@
 #include <QFile>
 #include <QTimer>
 #include <QString>
+#include <QtGlobal>
 #include <QSettings>
 #include <QTextStream>
 #include <QFileInfo>
@@ -17,9 +18,16 @@
 #include <QDomElement>
 #include <QDomNode>
 #include <QDomAttr>
-#include <QDebug>
 #include <algorithm>
 #include <vector>
+
+void appstoreservice::RepoHandler::updateRepoCache(QString& lastError)
+{
+    const auto osReleaseMap {getOsReleaseMap(lastError)};
+    repoCacheMap_=getRepoCacheMap(osReleaseMap.at("VERSION_ID"));
+    lastCacheUpdatedDt_=QDateTime::currentDateTime();
+    qInfo("Repository cache updated");
+}
 
 std::map<QString, QString> appstoreservice::RepoHandler::getOsReleaseMap(QString &lastError) const
 {
@@ -126,22 +134,18 @@ std::map<QString, QString> appstoreservice::RepoHandler::getRepoCacheMap(const Q
             qWarning(qPrintable(replyPtr->errorString()));
         }
     });
-    qDebug("Packages cache created");
     return repoCacheMap;
 }
 
 void appstoreservice::RepoHandler::run()
 {
     QString lastError {};
-    const auto osReleaseMap {getOsReleaseMap(lastError)};
-    repoCacheMap_=getRepoCacheMap(osReleaseMap.at("VERSION_ID"));
+    updateRepoCache(lastError);
     if(!lastError.isEmpty()){
-        QThread::quit();
         return;
     }
-
     timerPtr_.reset(new QTimer);
-    timerPtr_->setInterval(interval_);
+    timerPtr_->setInterval(timerInterval_);
     QObject::connect(timerPtr_.get(),&QTimer::timeout,
                      this,&RepoHandler::timeoutSlot,Qt::DirectConnection);
     timerPtr_->start();
@@ -161,9 +165,12 @@ appstoreservice::RepoHandler::~RepoHandler()
 
 void appstoreservice::RepoHandler::timeoutSlot()
 {
-    const auto isCacheExists {appSettingsPtr_->contains("repoCache")};
-    timerPtr_->stop();
-    if(isCacheExists){
+    const auto currentDt {QDateTime::currentDateTime()};
+    const auto deltaDays {std::abs(currentDt.daysTo(lastCacheUpdatedDt_))};
+    if(deltaDays >= cacheUpdateDaysInterval_){
+        timerPtr_->stop();
+        QString lastError {};
+        updateRepoCache(lastError);
+        timerPtr_->start();
     }
-    timerPtr_->start();
 }

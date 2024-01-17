@@ -44,11 +44,11 @@ int main(int argc, char *argv[])
 
     QWebSocketServer webServer {"webServer",QWebSocketServer::NonSecureMode};
     if(!webServer.listen(webServerAddress,webServerPort)){
-        qFatal("Fail open webserver on: %s:%d, error: %s",
+        qFatal("Fail open WebServer on: %s:%d, error: %s",
                qPrintable(QHostAddress(webServerAddress).toString()),webServerPort);
         app.quit();
     }
-    qInfo("WebServer started on: %s:%d",
+    qInfo("WebServer listening on: %s:%d",
           qPrintable(QHostAddress(webServerAddress).toString()),webServerPort);
 
     QWebChannel webChannel {};
