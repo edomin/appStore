@@ -13,7 +13,10 @@
 #include <QNetworkRequest>
 #include <QNetworkAccessManager>
 #include <QEventLoop>
-#include <QXmlQuery>
+#include <QDomDocument>
+#include <QDomElement>
+#include <QDomNode>
+#include <QDomAttr>
 #include <QDebug>
 #include <algorithm>
 #include <vector>
@@ -103,14 +106,31 @@ std::map<QString, QString> appstoreservice::RepoHandler::getRepoCacheMap() const
         eventLoop.exec();
         if(replyPtr->error()==QNetworkReply::NoError){
             const auto data {replyPtr->readAll()};
-            qDebug()<<data;
+            QTextStream stream {data};
+            while(!stream.atEnd()){
+                const auto line {stream.readLine()};
+                QDomDocument doc{};
+                doc.setContent(line);
+                QDomElement element {doc.documentElement()};
+                if(!element.isNull() && element.tagName()=="a"){
+                    const auto packageName {element.text()};
+                    if(packageName.endsWith(".rpm")){
+                        const auto packageLink {QStringLiteral("%1%2").arg(repoUrl,packageName)};
+                        if(!packageLink.isEmpty() && !packageLink.isEmpty()){
+                            repoCacheMap.emplace(packageName,packageLink);
+                        }
+                    }
+                }
+            }
         }
         else{
-            qDebug()<<replyPtr->errorString();
+            qWarning(qPrintable(replyPtr->errorString()));
         }
-        qDebug()<<repoUrl;
     });
-
+    std::for_each(repoCacheMap.begin(),repoCacheMap.end(),[](const std::pair<const QString,QString>& pair){
+        qDebug(qPrintable(pair.first));
+        qDebug(qPrintable(pair.second));
+    });
     return repoCacheMap;
 }
 
