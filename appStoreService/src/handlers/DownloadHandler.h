@@ -1,11 +1,12 @@
 #ifndef DOWNLOADHANDLER_H
 #define DOWNLOADHANDLER_H
 
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
 #include <QThread>
 
 #include <memory>
+
+class QNetworkAccessManager;
+class QNetworkReply;
 
 namespace appstoreservice {
 
@@ -14,6 +15,7 @@ class DownloadHandler : public QThread
     Q_OBJECT
 public:
     explicit DownloadHandler(QObject *parent = nullptr);
+    ~DownloadHandler();
     const QByteArray& getDownloadedData() const;
 
 public slots:
@@ -30,9 +32,9 @@ private slots:
     void fileDownloaded(QNetworkReply *reply);
 
 private:
-    QNetworkAccessManager          netAccess_;
-    std::shared_ptr<QNetworkReply> replyPtr_ {nullptr};
-    QByteArray                     downloadedData_;
+    std::shared_ptr<QNetworkAccessManager> netAccessPtr_;
+    std::shared_ptr<QNetworkReply>         replyPtr_       {nullptr};
+    QByteArray                             downloadedData_ {nullptr};
 };
 
 } // namespace appstoreservice

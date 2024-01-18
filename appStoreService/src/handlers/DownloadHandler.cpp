@@ -1,17 +1,25 @@
 #include "DownloadHandler.h"
 
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+
 appstoreservice::DownloadHandler::DownloadHandler(QObject *parent)
     : QThread{parent}
 {}
+
+appstoreservice::DownloadHandler::~DownloadHandler() {
+    QThread::quit();
+    QThread::wait();
+}
 
 const QByteArray& appstoreservice::DownloadHandler::getDownloadedData() const {
     return downloadedData_;
 }
 
 void appstoreservice::DownloadHandler::download(const QString& url) {
-    auto *reply = netAccess_.get(QNetworkRequest{url});
+    auto *reply = netAccessPtr_->get(QNetworkRequest{url});
     if (!reply->error())
-        replyPtr_ = std::shared_ptr<QNetworkReply>{reply};
+        replyPtr_.reset(reply);
 }
 
 void appstoreservice::DownloadHandler::abort() {
@@ -27,7 +35,8 @@ void appstoreservice::DownloadHandler::fileDownloaded(QNetworkReply *reply) {
 
 void appstoreservice::DownloadHandler::run()
 {
-    QObject::connect(&netAccess_, SIGNAL(finished(QNetworkReply *)),
-                     this, SLOT(fileDownloaded(QNetworkReply *)));
+    netAccessPtr_.reset(new QNetworkAccessManager);
+    QObject::connect(netAccessPtr_.get(), &QNetworkAccessManager::finished,
+                     this, &appstoreservice::DownloadHandler::fileDownloaded);
     QThread::exec();
 }
