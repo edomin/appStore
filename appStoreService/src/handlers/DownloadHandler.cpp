@@ -18,8 +18,7 @@ const QByteArray& appstoreservice::DownloadHandler::getDownloadedData() const {
 
 void appstoreservice::DownloadHandler::download(const QString& url) {
     auto *reply = netAccessPtr_->get(QNetworkRequest{url});
-    if (!reply->error())
-        replyPtr_.reset(reply);
+    replyPtr_.reset(reply->error() ? nullptr : reply);
 }
 
 void appstoreservice::DownloadHandler::abort() {
